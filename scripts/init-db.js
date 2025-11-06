@@ -11,29 +11,18 @@ async function initDatabase() {
     const schemaPath = path.join(__dirname, '../database_schema.sql');
     const schema = fs.readFileSync(schemaPath, 'utf8');
 
-    // 分割 SQL 語句
-    const statements = schema
-      .split(';')
-      .map(s => s.trim())
-      .filter(s => s.length > 0 && !s.startsWith('--'));
-
-    // 執行所有 SQL 語句
-    for (const statement of statements) {
-      await new Promise((resolve, reject) => {
-        db.run(statement, (err) => {
-          if (err) {
-            // 忽略表已存在的錯誤
-            if (err.message.includes('already exists')) {
-              resolve();
-            } else {
-              reject(err);
-            }
-          } else {
-            resolve();
-          }
-        });
+    // 使用 exec 方法執行整個 SQL schema
+    await new Promise((resolve, reject) => {
+      db.exec(schema, (err) => {
+        if (err) {
+          console.error('Schema execution error:', err);
+          reject(err);
+        } else {
+          console.log('✅ Database schema created successfully');
+          resolve();
+        }
       });
-    }
+    });
 
     // 創建示範租戶和管理員帳號
     const passwordHash = await bcrypt.hash('admin123', 10);

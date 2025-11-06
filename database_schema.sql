@@ -300,27 +300,3 @@ CREATE INDEX idx_users_tenant ON users(tenant_id);
 CREATE INDEX idx_stores_tenant ON stores(tenant_id);
 CREATE INDEX idx_products_tenant ON products(tenant_id);
 CREATE INDEX idx_inventory_tenant_store ON inventory(tenant_id, store_id);
-CREATE INDEX idx_purchase_orders_tenant ON purchase_orders(tenant_id);
-CREATE INDEX idx_sales_orders_tenant ON sales_orders(tenant_id);
-CREATE INDEX idx_payments_tenant ON payments(tenant_id);
-CREATE INDEX idx_inventory_transactions_tenant ON inventory_transactions(tenant_id);
-
--- 插入初始數據
-INSERT INTO tenants (tenant_code, company_name, contact_person, contact_email, plan_type)
-VALUES ('DEMO001', '示範連鎖店', '張經理', 'demo@example.com', 'premium');
-
-INSERT INTO users (tenant_id, username, password_hash, full_name, email, role)
-VALUES (1, 'admin', '$2b$10$XYZ...', '系統管理員', 'admin@example.com', 'admin');
-
-INSERT INTO payment_methods (tenant_id, method_code, method_name) VALUES
-(1, 'CASH', '現金'),
-(1, 'CARD', '信用卡'),
-(1, 'TRANSFER', '銀行轉帳'),
-(1, 'MOBILE', '行動支付');
-
-INSERT INTO expense_categories (tenant_id, category_code, category_name) VALUES
-(1, 'RENT', '租金'),
-(1, 'UTILITY', '水電費'),
-(1, 'SALARY', '薪資'),
-(1, 'MARKETING', '行銷費用'),
-(1, 'MAINTENANCE', '維修費');
