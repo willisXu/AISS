@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>儀表板 - 連鎖店管理系統</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- 側邊欄 -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h2>連鎖店系統</h2>
+        <small id="company-name">載入中...</small>
+      </div>
+
+      <ul class="sidebar-menu">
+        <li><a href="/index.html" class="active"><i class="fas fa-chart-line"></i><span>儀表板</span></a></li>
+        <li><a href="/stores.html"><i class="fas fa-store"></i><span>門店管理</span></a></li>
+        <li><a href="/products.html"><i class="fas fa-box"></i><span>商品管理</span></a></li>
+        <li><a href="/inventory.html"><i class="fas fa-warehouse"></i><span>庫存管理</span></a></li>
+        <li><a href="/purchases.html"><i class="fas fa-shopping-cart"></i><span>採購管理</span></a></li>
+        <li><a href="/sales.html"><i class="fas fa-cash-register"></i><span>銷售管理</span></a></li>
+        <li><a href="/payments.html"><i class="fas fa-money-bill-wave"></i><span>收支管理</span></a></li>
+        <li><a href="/expenses.html"><i class="fas fa-receipt"></i><span>費用管理</span></a></li>
+        <li><a href="/reports.html"><i class="fas fa-file-alt"></i><span>報表分析</span></a></li>
+      </ul>
+    </aside>
+
+    <!-- 主內容 -->
+    <main class="main-content">
+      <div class="top-nav">
+        <h1>儀表板</h1>
+        <div class="user-info">
+          <span>您好，<strong id="user-name">使用者</strong></span>
+          <a href="#" onclick="logout()" class="logout-btn">登出</a>
+        </div>
+      </div>
+
+      <!-- 統計卡片 -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <h4>今日銷售額</h4>
+          <div class="value" id="today-revenue">$0</div>
+          <small id="today-orders">0 筆訂單</small>
+        </div>
+
+        <div class="stat-card success">
+          <h4>本月總收入</h4>
+          <div class="value" id="month-revenue">$0</div>
+          <small id="month-orders">0 筆訂單</small>
+        </div>
+
+        <div class="stat-card warning">
+          <h4>本月總支出</h4>
+          <div class="value" id="month-expenses">$0</div>
+          <small>採購 + 費用</small>
+        </div>
+
+        <div class="stat-card danger">
+          <h4>本月淨利</h4>
+          <div class="value" id="month-profit">$0</div>
+          <small id="profit-margin">毛利率: 0%</small>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <!-- 熱銷商品 -->
+        <div class="card">
+          <div class="card-header">
+            <h3>熱銷商品 Top 5</h3>
+          </div>
+          <div class="card-body">
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>商品名稱</th>
+                    <th>銷量</th>
+                    <th>銷售額</th>
+                  </tr>
+                </thead>
+                <tbody id="top-products">
+                  <tr>
+                    <td colspan="3" class="text-center">載入中...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- 門店排名 -->
+        <div class="card">
+          <div class="card-header">
+            <h3>門店銷售排名</h3>
+          </div>
+          <div class="card-body">
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>門店名稱</th>
+                    <th>訂單數</th>
+                    <th>銷售額</th>
+                  </tr>
+                </thead>
+                <tbody id="store-ranking">
+                  <tr>
+                    <td colspan="3" class="text-center">載入中...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 庫存警報 -->
+      <div class="card">
+        <div class="card-header flex-between">
+          <h3>庫存警報</h3>
+          <a href="/inventory.html" class="btn btn-sm btn-primary">查看全部</a>
+        </div>
+        <div class="card-body">
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>商品代碼</th>
+                  <th>商品名稱</th>
+                  <th>門店</th>
+                  <th>當前庫存</th>
+                  <th>最低庫存</th>
+                  <th>狀態</th>
+                </tr>
+              </thead>
+              <tbody id="inventory-alerts">
+                <tr>
+                  <td colspan="6" class="text-center">載入中...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script>
+    checkAuth();
+
+    // 顯示用戶資訊
+    const user = getCurrentUser();
+    if (user) {
+      document.getElementById('user-name').textContent = user.fullName;
+    }
+
+    // 載入數據
+    async function loadDashboard() {
+      try {
+        // 獲取當前月份的開始和結束日期
+        const now = new Date();
+        const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+        const params = {
+          start_date: firstDay.toISOString().split('T')[0],
+          end_date: now.toISOString().split('T')[0]
+        };
+
+        const todayParams = {
+          start_date: today.toISOString().split('T')[0],
+          end_date: today.toISOString().split('T')[0]
+        };
+
+        // 獲取儀表板數據
+        const [dashboardData, todayData] = await Promise.all([
+          api.getDashboard(params),
+          api.getDashboard(todayParams)
+        ]);
+
+        // 更新統計卡片
+        document.getElementById('today-revenue').textContent = formatCurrency(todayData.sales.totalRevenue);
+        document.getElementById('today-orders').textContent = `${todayData.sales.totalOrders} 筆訂單`;
+
+        document.getElementById('month-revenue').textContent = formatCurrency(dashboardData.sales.totalRevenue);
+        document.getElementById('month-orders').textContent = `${dashboardData.sales.totalOrders} 筆訂單`;
+
+        const totalExpenses = dashboardData.purchase.totalCost + dashboardData.expenses.totalExpenses;
+        document.getElementById('month-expenses').textContent = formatCurrency(totalExpenses);
+
+        document.getElementById('month-profit').textContent = formatCurrency(dashboardData.profit.net);
+        const margin = dashboardData.sales.totalRevenue > 0
+          ? ((dashboardData.profit.gross / dashboardData.sales.totalRevenue) * 100).toFixed(1)
+          : 0;
+        document.getElementById('profit-margin').textContent = `毛利率: ${margin}%`;
+
+        // 更新熱銷商品
+        const topProductsBody = document.getElementById('top-products');
+        if (dashboardData.topProducts && dashboardData.topProducts.length > 0) {
+          topProductsBody.innerHTML = dashboardData.topProducts.map(product => `
+            <tr>
+              <td>${product.product_name}</td>
+              <td>${product.total_quantity}</td>
+              <td>${formatCurrency(product.total_revenue)}</td>
+            </tr>
+          `).join('');
+        } else {
+          topProductsBody.innerHTML = '<tr><td colspan="3" class="text-center">暫無數據</td></tr>';
+        }
+
+        // 更新門店排名
+        const storeRankingBody = document.getElementById('store-ranking');
+        if (dashboardData.storeRanking && dashboardData.storeRanking.length > 0) {
+          storeRankingBody.innerHTML = dashboardData.storeRanking.map(store => `
+            <tr>
+              <td>${store.store_name}</td>
+              <td>${store.order_count}</td>
+              <td>${formatCurrency(store.total_revenue)}</td>
+            </tr>
+          `).join('');
+        } else {
+          storeRankingBody.innerHTML = '<tr><td colspan="3" class="text-center">暫無數據</td></tr>';
+        }
+
+        // 獲取庫存警報
+        const alerts = await api.getInventoryAlerts();
+        const alertsBody = document.getElementById('inventory-alerts');
+        if (alerts && alerts.length > 0) {
+          alertsBody.innerHTML = alerts.slice(0, 10).map(alert => `
+            <tr>
+              <td>${alert.product_code}</td>
+              <td>${alert.product_name}</td>
+              <td>${alert.store_name}</td>
+              <td>${alert.quantity}</td>
+              <td>${alert.min_stock_level}</td>
+              <td><span class="badge badge-warning">庫存不足</span></td>
+            </tr>
+          `).join('');
+        } else {
+          alertsBody.innerHTML = '<tr><td colspan="6" class="text-center">無庫存警報</td></tr>';
+        }
+
+        // 獲取公司名稱
+        const userInfo = await api.getCurrentUser();
+        document.getElementById('company-name').textContent = userInfo.company_name;
+
+      } catch (error) {
+        console.error('載入儀表板失敗:', error);
+        showMessage('載入數據失敗: ' + error.message, 'error');
+      }
+    }
+
+    loadDashboard();
+  </script>
+</body>
+</html>

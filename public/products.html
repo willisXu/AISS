@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>商品管理 - 連鎖店管理系統</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- 側邊欄 -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h2>連鎖店系統</h2>
+        <small id="company-name">載入中...</small>
+      </div>
+
+      <ul class="sidebar-menu">
+        <li><a href="/index.html"><i class="fas fa-chart-line"></i><span>儀表板</span></a></li>
+        <li><a href="/stores.html"><i class="fas fa-store"></i><span>門店管理</span></a></li>
+        <li><a href="/products.html" class="active"><i class="fas fa-box"></i><span>商品管理</span></a></li>
+        <li><a href="/inventory.html"><i class="fas fa-warehouse"></i><span>庫存管理</span></a></li>
+        <li><a href="/purchases.html"><i class="fas fa-shopping-cart"></i><span>採購管理</span></a></li>
+        <li><a href="/sales.html"><i class="fas fa-cash-register"></i><span>銷售管理</span></a></li>
+        <li><a href="/payments.html"><i class="fas fa-money-bill-wave"></i><span>收支管理</span></a></li>
+        <li><a href="/expenses.html"><i class="fas fa-receipt"></i><span>費用管理</span></a></li>
+        <li><a href="/reports.html"><i class="fas fa-file-alt"></i><span>報表分析</span></a></li>
+      </ul>
+    </aside>
+
+    <!-- 主內容 -->
+    <main class="main-content">
+      <div class="top-nav">
+        <h1>商品管理</h1>
+        <div class="user-info">
+          <span>您好，<strong id="user-name">使用者</strong></span>
+          <a href="#" onclick="logout()" class="logout-btn">登出</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header flex-between">
+          <h3>商品列表</h3>
+          <button class="btn btn-primary" onclick="showAddProductForm()">
+            <i class="fas fa-plus"></i> 新增商品
+          </button>
+        </div>
+
+        <div class="card-body">
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>商品代碼</th>
+                  <th>商品名稱</th>
+                  <th>分類</th>
+                  <th>單位</th>
+                  <th>成本價</th>
+                  <th>售價</th>
+                  <th>狀態</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="products-table">
+                <tr>
+                  <td colspan="8" class="text-center">載入中...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 新增/編輯商品表單（隱藏） -->
+      <div id="product-form-modal" class="hidden">
+        <div class="card">
+          <div class="card-header">
+            <h3 id="form-title">新增商品</h3>
+          </div>
+          <div class="card-body">
+            <form id="product-form">
+              <input type="hidden" id="product-id">
+
+              <div class="grid-2">
+                <div class="form-group">
+                  <label for="product-code">商品代碼 *</label>
+                  <input type="text" id="product-code" class="form-control" required>
+                </div>
+
+                <div class="form-group">
+                  <label for="product-name">商品名稱 *</label>
+                  <input type="text" id="product-name" class="form-control" required>
+                </div>
+
+                <div class="form-group">
+                  <label for="category">分類</label>
+                  <select id="category" class="form-control">
+                    <option value="">請選擇分類</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label for="unit">單位 *</label>
+                  <input type="text" id="unit" class="form-control" placeholder="例：個、箱、公斤" required>
+                </div>
+
+                <div class="form-group">
+                  <label for="cost-price">成本價 *</label>
+                  <input type="number" id="cost-price" class="form-control" step="0.01" min="0" required>
+                </div>
+
+                <div class="form-group">
+                  <label for="selling-price">售價 *</label>
+                  <input type="number" id="selling-price" class="form-control" step="0.01" min="0" required>
+                </div>
+
+                <div class="form-group">
+                  <label for="barcode">條碼</label>
+                  <input type="text" id="barcode" class="form-control">
+                </div>
+
+                <div class="form-group">
+                  <label for="status">狀態</label>
+                  <select id="status" class="form-control">
+                    <option value="active">啟用</option>
+                    <option value="inactive">停用</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="description">描述</label>
+                <textarea id="description" class="form-control" rows="3"></textarea>
+              </div>
+
+              <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="hideProductForm()">取消</button>
+                <button type="submit" class="btn btn-primary">儲存</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script>
+    checkAuth();
+
+    const user = getCurrentUser();
+    if (user) {
+      document.getElementById('user-name').textContent = user.fullName;
+    }
+
+    let categories = [];
+    let editingProductId = null;
+
+    // 載入商品列表
+    async function loadProducts() {
+      try {
+        const products = await api.getProducts();
+        const tbody = document.getElementById('products-table');
+
+        if (products && products.length > 0) {
+          tbody.innerHTML = products.map(product => `
+            <tr>
+              <td>${product.product_code}</td>
+              <td>${product.product_name}</td>
+              <td>${product.category_name || '-'}</td>
+              <td>${product.unit}</td>
+              <td>${formatCurrency(product.cost_price)}</td>
+              <td>${formatCurrency(product.selling_price)}</td>
+              <td>
+                <span class="badge ${product.status === 'active' ? 'badge-success' : 'badge-danger'}">
+                  ${product.status === 'active' ? '啟用' : '停用'}
+                </span>
+              </td>
+              <td>
+                <button class="btn btn-sm btn-warning" onclick="editProduct(${product.id})">編輯</button>
+                <button class="btn btn-sm btn-danger" onclick="deleteProduct(${product.id}, '${product.product_name}')">刪除</button>
+              </td>
+            </tr>
+          `).join('');
+        } else {
+          tbody.innerHTML = '<tr><td colspan="8" class="text-center">暫無商品</td></tr>';
+        }
+
+        // 載入公司名稱
+        const userInfo = await api.getCurrentUser();
+        document.getElementById('company-name').textContent = userInfo.company_name;
+
+      } catch (error) {
+        console.error('載入商品失敗:', error);
+        showMessage('載入商品失敗: ' + error.message, 'error');
+      }
+    }
+
+    // 載入分類
+    async function loadCategories() {
+      try {
+        categories = await api.getCategories();
+        const select = document.getElementById('category');
+        select.innerHTML = '<option value="">請選擇分類</option>' +
+          categories.map(cat => `<option value="${cat.id}">${cat.category_name}</option>`).join('');
+      } catch (error) {
+        console.error('載入分類失敗:', error);
+      }
+    }
+
+    // 顯示新增商品表單
+    function showAddProductForm() {
+      editingProductId = null;
+      document.getElementById('form-title').textContent = '新增商品';
+      document.getElementById('product-form').reset();
+      document.getElementById('product-id').value = '';
+      document.getElementById('product-code').disabled = false;
+      document.getElementById('product-form-modal').classList.remove('hidden');
+    }
+
+    // 編輯商品
+    async function editProduct(id) {
+      try {
+        const product = await api.getProduct(id);
+        editingProductId = id;
+
+        document.getElementById('form-title').textContent = '編輯商品';
+        document.getElementById('product-id').value = id;
+        document.getElementById('product-code').value = product.product_code;
+        document.getElementById('product-code').disabled = true;
+        document.getElementById('product-name').value = product.product_name;
+        document.getElementById('category').value = product.category_id || '';
+        document.getElementById('unit').value = product.unit;
+        document.getElementById('cost-price').value = product.cost_price;
+        document.getElementById('selling-price').value = product.selling_price;
+        document.getElementById('barcode').value = product.barcode || '';
+        document.getElementById('status').value = product.status;
+        document.getElementById('description').value = product.description || '';
+
+        document.getElementById('product-form-modal').classList.remove('hidden');
+      } catch (error) {
+        showMessage('載入商品資料失敗: ' + error.message, 'error');
+      }
+    }
+
+    // 隱藏表單
+    function hideProductForm() {
+      document.getElementById('product-form-modal').classList.add('hidden');
+    }
+
+    // 刪除商品
+    async function deleteProduct(id, name) {
+      if (!confirmAction(`確定要刪除商品「${name}」嗎？`)) {
+        return;
+      }
+
+      try {
+        await api.deleteProduct(id);
+        showMessage('商品已刪除', 'success');
+        loadProducts();
+      } catch (error) {
+        showMessage('刪除失敗: ' + error.message, 'error');
+      }
+    }
+
+    // 提交表單
+    document.getElementById('product-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const data = {
+        product_code: document.getElementById('product-code').value,
+        product_name: document.getElementById('product-name').value,
+        category_id: document.getElementById('category').value || null,
+        unit: document.getElementById('unit').value,
+        cost_price: parseFloat(document.getElementById('cost-price').value),
+        selling_price: parseFloat(document.getElementById('selling-price').value),
+        barcode: document.getElementById('barcode').value,
+        status: document.getElementById('status').value,
+        description: document.getElementById('description').value
+      };
+
+      try {
+        if (editingProductId) {
+          await api.updateProduct(editingProductId, data);
+          showMessage('商品已更新', 'success');
+        } else {
+          await api.createProduct(data);
+          showMessage('商品已新增', 'success');
+        }
+
+        hideProductForm();
+        loadProducts();
+      } catch (error) {
+        showMessage('儲存失敗: ' + error.message, 'error');
+      }
+    });
+
+    // 初始化
+    loadCategories();
+    loadProducts();
+  </script>
+</body>
+</html>

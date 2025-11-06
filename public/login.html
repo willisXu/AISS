@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>登入 - 連鎖店管理系統</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-box">
+      <h1>連鎖店管理系統</h1>
+      <p style="text-align: center; color: #6b7280; margin-bottom: 30px;">多租戶 SaaS 平台</p>
+
+      <div id="error-message" class="alert alert-error hidden"></div>
+
+      <form id="login-form">
+        <div class="form-group">
+          <label for="tenant-code">租戶代碼</label>
+          <input
+            type="text"
+            id="tenant-code"
+            class="form-control"
+            placeholder="請輸入租戶代碼"
+            value="DEMO001"
+            required
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="username">使用者名稱</label>
+          <input
+            type="text"
+            id="username"
+            class="form-control"
+            placeholder="請輸入使用者名稱"
+            value="admin"
+            required
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="password">密碼</label>
+          <input
+            type="password"
+            id="password"
+            class="form-control"
+            placeholder="請輸入密碼"
+            value="admin123"
+            required
+          >
+        </div>
+
+        <button type="submit" class="btn btn-primary">登入</button>
+      </form>
+
+      <div style="margin-top: 20px; text-align: center; color: #6b7280; font-size: 12px;">
+        <p>示範帳號</p>
+        <p>租戶: DEMO001 | 帳號: admin | 密碼: admin123</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script>
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const tenantCode = document.getElementById('tenant-code').value;
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      const errorDiv = document.getElementById('error-message');
+
+      errorDiv.classList.add('hidden');
+
+      try {
+        await api.login(tenantCode, username, password);
+        window.location.href = '/index.html';
+      } catch (error) {
+        errorDiv.textContent = error.message || '登入失敗，請檢查您的憑證';
+        errorDiv.classList.remove('hidden');
+      }
+    });
+
+    // 如果已經登入，直接跳轉到主頁
+    if (localStorage.getItem('token')) {
+      window.location.href = '/index.html';
+    }
+  </script>
+</body>
+</html>

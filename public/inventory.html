@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>庫存管理 - 連鎖店管理系統</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h2>連鎖店系統</h2>
+        <small id="company-name">載入中...</small>
+      </div>
+      <ul class="sidebar-menu">
+        <li><a href="/index.html"><i class="fas fa-chart-line"></i><span>儀表板</span></a></li>
+        <li><a href="/stores.html"><i class="fas fa-store"></i><span>門店管理</span></a></li>
+        <li><a href="/products.html"><i class="fas fa-box"></i><span>商品管理</span></a></li>
+        <li><a href="/inventory.html" class="active"><i class="fas fa-warehouse"></i><span>庫存管理</span></a></li>
+        <li><a href="/purchases.html"><i class="fas fa-shopping-cart"></i><span>採購管理</span></a></li>
+        <li><a href="/sales.html"><i class="fas fa-cash-register"></i><span>銷售管理</span></a></li>
+        <li><a href="/payments.html"><i class="fas fa-money-bill-wave"></i><span>收支管理</span></a></li>
+        <li><a href="/expenses.html"><i class="fas fa-receipt"></i><span>費用管理</span></a></li>
+        <li><a href="/reports.html"><i class="fas fa-file-alt"></i><span>報表分析</span></a></li>
+      </ul>
+    </aside>
+
+    <main class="main-content">
+      <div class="top-nav">
+        <h1>庫存管理</h1>
+        <div class="user-info">
+          <span>您好，<strong id="user-name">使用者</strong></span>
+          <a href="#" onclick="logout()" class="logout-btn">登出</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><h3>庫存列表</h3></div>
+        <div class="card-body">
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>商品代碼</th>
+                  <th>商品名稱</th>
+                  <th>門店</th>
+                  <th>當前庫存</th>
+                  <th>最低庫存</th>
+                  <th>狀態</th>
+                </tr>
+              </thead>
+              <tbody id="inventory-table">
+                <tr><td colspan="6" class="text-center">載入中...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script>
+    checkAuth();
+    const user = getCurrentUser();
+    if (user) document.getElementById('user-name').textContent = user.fullName;
+
+    async function loadInventory() {
+      try {
+        const inventory = await api.getInventory();
+        const tbody = document.getElementById('inventory-table');
+
+        if (inventory && inventory.length > 0) {
+          tbody.innerHTML = inventory.map(item => {
+            const isLow = item.quantity <= item.min_stock_level;
+            return `
+              <tr>
+                <td>${item.product_code}</td>
+                <td>${item.product_name}</td>
+                <td>${item.store_name}</td>
+                <td>${item.quantity}</td>
+                <td>${item.min_stock_level}</td>
+                <td><span class="badge ${isLow ? 'badge-warning' : 'badge-success'}">
+                  ${isLow ? '庫存不足' : '正常'}
+                </span></td>
+              </tr>
+            `;
+          }).join('');
+        } else {
+          tbody.innerHTML = '<tr><td colspan="6" class="text-center">暫無庫存記錄</td></tr>';
+        }
+
+        const userInfo = await api.getCurrentUser();
+        document.getElementById('company-name').textContent = userInfo.company_name;
+      } catch (error) {
+        showMessage('載入庫存失敗: ' + error.message, 'error');
+      }
+    }
+
+    loadInventory();
+  </script>
+</body>
+</html>
